@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Платформа обучения персонала</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="#" class="navbar-brand">Платформа обучения</a>
+    <div class="navbar-nav" id="main-nav-buttons">
+      <!-- Кнопки навигации будут динамически добавляться тут -->
+    </div>
+  </nav>
+  <div id="app" class="container"></div>
+
+<script src="js/core.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/users.js"></script>
+<script src="js/shortcodes.js"></script>
+<script src="js/modals.js"></script>
+<script src="js/quizzes.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/admin/dashboard.js"></script>
+<script src="js/admin/courses.js"></script>
+<script src="js/admin/quizzes.js"></script>
+<script src="js/admin/reports.js"></script>
+<script src="js/quizzes/single.js"></script>
+<script src="js/quizzes/multiple.js"></script>
+<script src="js/quizzes/dragdrop.js"></script>
+<script src="js/quizzes/fillblank.js"></script>
+<script src="js/quizzes/sequence.js"></script>
+<script src="js/quizzes/hotspot.js"></script>
+<script src="js/quizzes/truefalse.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof Core !== 'undefined' && Core.init) {
+        Core.init();
+      } else {
+        document.getElementById('app').innerHTML = `
+          <div style="text-align: center; padding: 50px; color: var(--danger);">
+            <h2>Ошибка загрузки</h2>
+            <p>Проверьте, что все JS-файлы находятся в папке <code>js/</code>.</p>
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
