@@ -1,21 +1,19 @@
 /**
  * QUIZZES/MULTIPLE.JS — Логика для тестов с несколькими правильными ответами
  */
-QuizTypes.Multiple = {
+QuizTypes.multiple = {
     render(question) {
         const options = [...question.options].sort(() => Math.random() - 0.5);
-        let html = '<div style="margin: 20px 0;">';
+        let html = '<fieldset>';
         options.forEach((option, index) => {
             html += `
-                <div style="margin: 10px 0;">
-                    <label style="display: flex; align-items: center; cursor: pointer;">
-                        <input type="checkbox" value="${option}" style="margin-right: 10px;">
-                        ${option}
-                    </label>
-                </div>
+                <label for="option_${index}">
+                    <input type="checkbox" id="option_${index}" name="answer" value="${option}">
+                    ${option}
+                </label>
             `;
         });
-        html += '</div>';
+        html += '</fieldset>';
         return html;
     },
 
@@ -27,7 +25,6 @@ QuizTypes.Multiple = {
                     .filter(cb => cb.checked)
                     .map(cb => cb.value);
                 onAnswer(selected);
-                nextBtn.disabled = selected.length === 0;
             });
         });
     },
@@ -36,7 +33,9 @@ QuizTypes.Multiple = {
         if (!userAnswers || userAnswers.length !== question.correct.length) {
             return false;
         }
-        const correctOptions = question.correct.map(index => question.options[index]);
-        return userAnswers.every(answer => correctOptions.includes(answer));
+        // Создаем множество правильных ответов для быстрой проверки
+        const correctSet = new Set(question.correct.map(index => question.options[index]));
+        // Проверяем, что каждый ответ пользователя есть в множестве правильных
+        return userAnswers.every(answer => correctSet.has(answer));
     }
 };

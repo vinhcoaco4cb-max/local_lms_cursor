@@ -1,76 +1,77 @@
 /**
  * QUIZZES/SEQUENCE.JS — Логика для тестов на последовательность
  */
-QuizTypes.Sequence = {
+QuizTypes.sequence = {
     render(question) {
-        const steps = [...question.steps].map((step, index) => ({...step, originalIndex: index}))
-            .sort(() => Math.random() - 0.5);
+        // Создаем массив объектов для сохранения исходного индекса
+        const steps = question.steps.map((step, index) => ({ text: step, originalIndex: index }))
+            .sort(() => Math.random() - 0.5); // Перемешиваем
         
         let html = `
-            <div style="margin: 20px 0;">
-                <p>Расставьте шаги в правильном порядке:</p>
-                <div id="sequenceContainer" style="margin-top: 20px;">
+            <p><small>Перетащите элементы, чтобы расставить их в правильном порядке.</small></p>
+            <div id="sequenceContainer" class="sequence-container">
         `;
         
-        steps.forEach((step) => {
+        steps.forEach((stepObj) => {
             html += `
-                <div draggable="true" data-index="${step.originalIndex}" style="background: var(--background-alt); padding: 15px; margin: 5px 0; border-radius: 8px; cursor: move; display: flex; align-items: center;">
-                    ${step}
-                </div>
+                <a href="#" draggable="true" data-index="${stepObj.originalIndex}" class="secondary outline sequence-item">
+                    ${stepObj.text}
+                </a>
             `;
         });
         
-        html += `
-                </div>
-            </div>
-        `;
-        
+        html += `</div>`;
         return html;
     },
 
     init(question, nextBtn, onAnswer) {
-        const items = document.querySelectorAll('#sequenceContainer [draggable]');
         const container = document.getElementById('sequenceContainer');
-        
-        items.forEach(item => {
-            item.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', e.target.dataset.index);
-                e.target.style.opacity = '0.5';
-            });
-            
-            item.addEventListener('dragend', (e) => {
-                e.target.style.opacity = '1';
-            });
+        let draggedItem = null;
+
+        container.addEventListener('dragstart', (e) => {
+            draggedItem = e.target;
+            e.target.style.opacity = '0.5';
         });
-        
-        container.addEventListener('dragover', (e) => e.preventDefault());
-        
-        container.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const draggedIndex = e.dataTransfer.getData('text/plain');
-            const draggedElement = document.querySelector(`[data-index="${draggedIndex}"]`);
-            
-            let dropTarget = null;
-            for (let item of items) {
-                const rect = item.getBoundingClientRect();
-                if (e.clientY < rect.bottom && e.clientY > rect.top) {
-                    dropTarget = item;
-                    break;
-                }
-            }
-            
-            if (dropTarget && dropTarget !== draggedElement) {
-                container.insertBefore(draggedElement, dropTarget);
-            }
-            
+
+        container.addEventListener('dragend', (e) => {
+            e.target.style.opacity = '1';
+            draggedItem = null;
+
+            // После перетаскивания собираем новый порядок и отправляем ответ
             const newOrder = Array.from(container.children).map(el => parseInt(el.dataset.index));
             onAnswer(newOrder);
-            nextBtn.disabled = false;
+        });
+        
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const afterElement = this.getDragAfterElement(container, e.clientY);
+            if (afterElement == null) {
+                container.appendChild(draggedItem);
+            } else {
+                container.insertBefore(draggedItem, afterElement);
+            }
         });
     },
 
+    // Вспомогательная функция для определения, куда вставить перетаскиваемый элемент
+    getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.sequence-item:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    },
+
     validate(question, userOrder) {
-        const correctOrder = question.steps.map((step, index) => index);
+        if (!userOrder || userOrder.length !== question.steps.length) return false;
+        // Правильный порядок - это просто последовательность индексов от 0 до N-1
+        const correctOrder = question.steps.map((_, index) => index);
         return JSON.stringify(userOrder) === JSON.stringify(correctOrder);
     }
 };

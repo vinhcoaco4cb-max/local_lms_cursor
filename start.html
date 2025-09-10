@@ -4,16 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Платформа обучения персонала</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <!-- Заменяем на компактную версию Pico -->
+  <link rel="stylesheet" href="css/pico.classless.min.css"> 
+  <link rel="stylesheet" href="css/custom.css">
 </head>
 <body>
-  <nav class="navbar">
-    <a href="#" class="navbar-brand">Платформа обучения</a>
-    <div class="navbar-nav" id="main-nav-buttons">
-      <!-- Кнопки навигации будут динамически добавляться тут -->
-    </div>
-  </nav>
-  <div id="app" class="container"></div>
+  <header class="container-fluid">
+    <nav>
+      <ul>
+        <li><strong>Платформа обучения</strong></li>
+      </ul>
+      <ul id="main-nav-buttons">
+        <!-- Кнопки навигации будут динамически добавляться тут -->
+      </ul>
+    </nav>
+  </header>
+  
+  <main class="container-fluid" id="app">
+    <!-- Основной контент приложения -->
+  </main>
 
 <script src="js/core.js"></script>
 <script src="js/storage.js"></script>
@@ -40,7 +49,7 @@
         Core.init();
       } else {
         document.getElementById('app').innerHTML = `
-          <div style="text-align: center; padding: 50px; color: var(--danger);">
+          <div style="text-align: center; padding: 50px;">
             <h2>Ошибка загрузки</h2>
             <p>Проверьте, что все JS-файлы находятся в папке <code>js/</code>.</p>
           </div>
@@ -50,3 +59,4 @@
   </script>
 </body>
 </html>
+

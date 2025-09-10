@@ -17,18 +17,24 @@ const Admin = {
       return;
     }
     this.app = document.getElementById('app'); // Инициализируем app здесь
+    
+    // Используем навигацию в стиле Pico.css
     let html = `
-      <nav class="navbar">
-        <button onclick="Core.toggleAdminMode()" class="btn btn-secondary">← Назад</button>
-        <a href="#" class="navbar-brand">Администрирование</a>
-        <div class="navbar-nav">
-          <button onclick="Admin.setTab('dashboard')" class="btn ${this.state.currentTab === 'dashboard' ? 'active' : ''}">Дашборд</button>
-          <button onclick="Admin.setTab('courses')" class="btn ${this.state.currentTab === 'courses' ? 'active' : ''}">Курсы</button>
-          <button onclick="Admin.setTab('quizzes')" class="btn ${this.state.currentTab === 'quizzes' ? 'active' : ''}">Тесты</button>
-          <button onclick="Admin.setTab('reports')" class="btn ${this.state.currentTab === 'reports' ? 'active' : ''}">Отчёты</button>
-        </div>
+      <nav>
+        <ul>
+          <li><a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); Core.toggleAdminMode()">← К обучению</a></li>
+        </ul>
+        <ul>
+          <li><strong>Администрирование</strong></li>
+        </ul>
+        <ul>
+          <li><a href="#" role="tab" onclick="event.preventDefault(); Admin.setTab('dashboard')" ${this.state.currentTab === 'dashboard' ? 'aria-current="page"' : ''}>Дашборд</a></li>
+          <li><a href="#" role="tab" onclick="event.preventDefault(); Admin.setTab('courses')" ${this.state.currentTab === 'courses' ? 'aria-current="page"' : ''}>Курсы</a></li>
+          <li><a href="#" role="tab" onclick="event.preventDefault(); Admin.setTab('quizzes')" ${this.state.currentTab === 'quizzes' ? 'aria-current="page"' : ''}>Тесты</a></li>
+          <li><a href="#" role="tab" onclick="event.preventDefault(); Admin.setTab('reports')" ${this.state.currentTab === 'reports' ? 'aria-current="page"' : ''}>Отчёты</a></li>
+        </ul>
       </nav>
-      <div class="container">
+      <div id="admin-content">
     `;
 
     switch (this.state.currentTab) {
@@ -45,7 +51,7 @@ const Admin = {
         html += AdminReports.renderTab();
         break;
       default:
-        html += `<div>Выберите вкладку.</div>`;
+        html += `<article>Выберите вкладку.</article>`;
     }
 
     html += `</div>`;

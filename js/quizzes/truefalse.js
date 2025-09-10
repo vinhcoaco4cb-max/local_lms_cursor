@@ -1,35 +1,33 @@
 /**
  * QUIZZES/TRUEFALSE.JS — Логика для тестов "Верно/Неверно"
  */
-QuizTypes.TrueFalse = {
+QuizTypes.truefalse = {
     render(question) {
-        const options = ['Верно', 'Неверно'].sort(() => Math.random() - 0.5);
-        let html = '<div style="margin: 20px 0;">';
-        options.forEach((option) => {
-            html += `
-                <div style="margin: 10px 0;">
-                    <label style="display: flex; align-items: center; cursor: pointer;">
-                        <input type="radio" name="answer" value="${option}" style="margin-right: 10px;">
-                        ${option}
-                    </label>
-                </div>
-            `;
-        });
-        html += '</div>';
-        return html;
+        return `
+            <fieldset>
+                <label for="true_option">
+                    <input type="radio" id="true_option" name="answer" value="true">
+                    Верно
+                </label>
+                <label for="false_option">
+                    <input type="radio" id="false_option" name="answer" value="false">
+                    Неверно
+                </label>
+            </fieldset>
+        `;
     },
 
     init(question, nextBtn, onAnswer) {
         const radios = document.querySelectorAll('input[type="radio"]');
         radios.forEach(radio => {
             radio.addEventListener('change', () => {
-                onAnswer(radio.value === 'Верно');
-                nextBtn.disabled = false;
+                onAnswer(radio.value === 'true');
             });
         });
     },
 
     validate(question, userAnswer) {
-        return question.correct[0] === (userAnswer ? 0 : 1);
+        const isCorrectAnswerTrue = question.correct[0] === 0;
+        return isCorrectAnswerTrue === userAnswer;
     }
 };

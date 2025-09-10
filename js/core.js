@@ -78,7 +78,6 @@ const Core = {
   // Основной рендеринг — переключает экраны
   render() {
     const app = document.getElementById('app');
-    app.className = '';
 
     switch (this.state.currentView) {
       case 'login':
@@ -114,12 +113,14 @@ const Core = {
   renderLoginScreen() {
     const app = document.getElementById('app');
     app.innerHTML = `
-      <div class="card fade-in" style="max-width: 500px; margin: 50px auto; padding: 30px; text-align: center;">
+      <article class="fade-in" style="max-width: 500px; margin: 50px auto; text-align: center;">
         <h2>Добро пожаловать</h2>
         <p style="margin-bottom: 25px;">Выберите вашу роль для входа в систему.</p>
-        <button onclick="Core.setView('register')" class="btn btn-primary" style="margin-bottom: 15px;">Я — обучаемый</button>
-        <button onclick="Core.renderAdminLogin()" class="btn btn-secondary">Я — администратор</button>
-      </div>
+        <footer>
+          <button onclick="Core.setView('register')">Я — обучаемый</button>
+          <button onclick="Core.renderAdminLogin()" class="secondary">Я — администратор</button>
+        </footer>
+      </article>
     `;
   },
 
@@ -127,21 +128,21 @@ const Core = {
   renderAdminLogin() {
     const app = document.getElementById('app');
     app.innerHTML = `
-      <div class="card fade-in" style="max-width: 500px; margin: 50px auto; padding: 30px;">
-        <button onclick="Core.setView('login')" class="btn btn-secondary" style="margin-bottom: 20px;">← Назад</button>
+      <article class="fade-in" style="max-width: 500px; margin: 50px auto;">
+        <a href="#" onclick="event.preventDefault(); Core.setView('login')" class="secondary" style="margin-bottom: 20px;">← Назад</a>
         <h2>Вход для администратора</h2>
         <form id="adminLoginForm">
-          <div class="form-group">
-            <label for="adminLogin">Логин</label>
-            <input type="text" id="adminLogin" required>
-          </div>
-          <div class="form-group">
-            <label for="adminPassword">Пароль</label>
-            <input type="password" id="adminPassword" required>
-          </div>
-          <button type="submit" class="btn btn-primary">Войти</button>
+          <label for="adminLogin">
+            Логин
+            <input type="text" id="adminLogin" name="adminLogin" required>
+          </label>
+          <label for="adminPassword">
+            Пароль
+            <input type="password" id="adminPassword" name="adminPassword" required>
+          </label>
+          <button type="submit">Войти</button>
         </form>
-      </div>
+      </article>
     `;
     document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -163,22 +164,22 @@ const Core = {
   renderUserRegistration() {
     const app = document.getElementById('app');
     app.innerHTML = `
-      <div class="card fade-in" style="max-width: 500px; margin: 50px auto; padding: 30px;">
-        <button onclick="Core.setView('login')" class="btn btn-secondary" style="margin-bottom: 20px;">← Назад</button>
+      <article class="fade-in" style="max-width: 500px; margin: 50px auto;">
+        <a href="#" onclick="event.preventDefault(); Core.setView('login')" class="secondary" style="margin-bottom: 20px;">← Назад</a>
         <h2>Регистрация</h2>
         <p>Пожалуйста, введите ваши данные для начала обучения.</p>
         <form id="userForm">
-          <div class="form-group">
-            <label for="userName">ФИО *</label>
-            <input type="text" id="userName" required placeholder="Иванов Иван Иванович">
-          </div>
-          <div class="form-group">
-            <label for="userDepartment">Отдел / Роль</label>
-            <input type="text" id="userDepartment" placeholder="Отдел безопасности">
-          </div>
-          <button type="submit" class="btn btn-primary">Начать обучение</button>
+          <label for="userName">
+            ФИО *
+            <input type="text" id="userName" name="userName" required placeholder="Иванов Иван Иванович">
+          </label>
+          <label for="userDepartment">
+            Отдел / Роль
+            <input type="text" id="userDepartment" name="userDepartment" placeholder="Отдел безопасности">
+          </label>
+          <button type="submit">Начать обучение</button>
         </form>
-      </div>
+      </article>
     `;
 
     document.getElementById('userForm').addEventListener('submit', (e) => {
@@ -216,18 +217,18 @@ const Core = {
   
     const app = document.getElementById('app');
     let html = `
-      <div class="page-header">
-        <h1>Платформа обучения</h1>
-      </div>
+      <header>
+        <h1 class="page-title">Платформа обучения</h1>
+      </header>
     `;
   
     const courses = Storage.getCourses();
-    html += `<div class="content-section"><h2>Доступные курсы</h2>`;
+    html += `<h2>Доступные курсы</h2>`;
   
     if (courses.length === 0) {
-      html += `<p>Нет доступных курсов. Перейдите в админку для создания.</p>`;
+      html += `<article><p>Нет доступных курсов. Перейдите в админку для создания.</p></article>`;
     } else {
-      html += `<div class="course-list-grid">`;
+      html += `<div class="grid">`;
       courses.forEach(course => {
         const progress = Users.getUserProgress(this.state.currentUser.id);
         const courseProgress = progress[course.id] || {};
@@ -236,24 +237,25 @@ const Core = {
         const percent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   
         html += `
-          <div class="card fade-in course-card">
-            <h3 class="course-title">${course.title}</h3>
-            <p class="course-description">${course.description || ''}</p>
-            <div class="course-progress-container mt-15">
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: ${percent}%"></div>
-              </div>
-              <small class="course-progress-text">${completedLessons} из ${totalLessons} уроков</small>
-            </div>
-            <button onclick="Core.setView('course', { currentCourseId: '${course.id}' })" class="btn btn-primary mt-10">
-              ${percent === 100 ? 'Повторить' : 'Начать'}
-            </button>
-          </div>
+          <article class="fade-in">
+            <hgroup>
+              <h3>${course.title}</h3>
+              <p>${course.description || ''}</p>
+            </hgroup>
+            <p>
+              <progress value="${percent}" max="100"></progress>
+              <small>${completedLessons} из ${totalLessons} уроков</small>
+            </p>
+            <footer>
+              <a href="#" role="button" onclick="event.preventDefault(); Core.setView('course', { currentCourseId: '${course.id}' })">
+                ${percent === 100 ? 'Повторить' : 'Начать'}
+              </a>
+            </footer>
+          </article>
         `;
       });
       html += `</div>`;
     }
-    html += `</div>`;
   
     app.innerHTML = html;
   },
@@ -263,12 +265,14 @@ const Core = {
     const mainNavButtons = document.getElementById('main-nav-buttons');
     if (mainNavButtons) {
       mainNavButtons.innerHTML = `
-        <span>Привет, ${this.state.currentUser.name}</span>
-        <button onclick="Core.switchUser()" class="btn btn-secondary ml-10">Сменить</button>
+        <li>${this.state.currentUser.name}</li>
+        <li><a href="#" role="button" onclick="event.preventDefault(); Core.switchUser()" class="secondary outline">Сменить</a></li>
         ${this.state.isAdmin ? `
-        <button onclick="Core.toggleAdminMode()" class="btn btn-secondary ml-10">
-          ${this.state.isAdminMode ? 'Обучение' : 'Админка'}
-        </button>
+        <li>
+          <a href="#" role="button" onclick="event.preventDefault(); Core.toggleAdminMode()" class="contrast">
+            ${this.state.isAdminMode ? 'К обучению' : 'В админку'}
+          </a>
+        </li>
         ` : ''}
       `;
     }
@@ -290,13 +294,13 @@ const Core = {
   
     const app = document.getElementById('app');
     let html = `
-      <div class="page-header">
-        <button onclick="Core.setView('home')" class="btn btn-secondary">← Назад</button>
-        <h2>${course.title}</h2>
-        <div></div>
-      </div>
-      <div class="content-section">
-        <h3>Уроки</h3>
+      <header class="page-header">
+        <hgroup>
+          <h2>${course.title}</h2>
+          <h3>Список уроков</h3>
+        </hgroup>
+        <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Core.setView('home')">← Назад к курсам</a>
+      </header>
     `;
   
     course.lessons.forEach((lesson, index) => {
@@ -306,25 +310,25 @@ const Core = {
       const isLocked = this.isLessonLocked(course, index, progress);
   
       html += `
-        <div class="card lesson-card" style="opacity: ${isLocked ? '0.6' : '1'};">
-          <div class="lesson-card-content">
-            <div>
-              <h4 class="lesson-title">${index + 1}. ${lesson.title}</h4>
-              ${isCompleted ? '<span class="lesson-status success-text">✅ Пройдено</span>' : ''}
-            </div>
-            <button 
-              onclick="Core.setView('lesson', { currentCourseId: '${course.id}', currentLessonId: '${lesson.id}' })" 
-              class="btn btn-primary"
-              ${isLocked ? 'disabled title="Сначала пройдите предыдущий урок"' : ''}
+        <article class="lesson-item" ${isLocked ? 'data-disabled' : ''}>
+          <div class="lesson-item-content">
+            <hgroup>
+              <h4>${index + 1}. ${lesson.title}</h4>
+              <p>${isCompleted ? '✅ Пройдено' : 'Не пройдено'}</p>
+            </hgroup>
+            <a 
+              href="#"
+              role="button"
+              onclick="event.preventDefault(); if(!this.closest('article').hasAttribute('data-disabled')) Core.setView('lesson', { currentCourseId: '${course.id}', currentLessonId: '${lesson.id}' })" 
+              ${isLocked ? 'aria-disabled="true" title="Сначала пройдите предыдущий урок"' : ''}
             >
               ${isCompleted ? 'Повторить' : 'Начать'}
-            </button>
+            </a>
           </div>
-        </div>
+        </article>
       `;
     });
   
-    html += `</div>`;
     app.innerHTML = html;
   },
   
@@ -359,14 +363,16 @@ const Core = {
   
     const app = document.getElementById('app');
     let html = `
-      <div class="page-header">
-        <button onclick="Core.setView('course', { currentCourseId: '${courseId}' })" class="btn btn-secondary">← Назад</button>
-        <h2>${lesson.title}</h2>
-        <div></div>
-      </div>
-      <div class="content-section" id="lessonContent">
-        <div class="loading-text">Загрузка контента...</div>
-      </div>
+       <header class="page-header">
+        <hgroup>
+          <h2>${lesson.title}</h2>
+          <p>Курс: ${course.title}</p>
+        </hgroup>
+        <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Core.setView('course', { currentCourseId: '${courseId}' })">← Назад к урокам</a>
+      </header>
+      <article id="lessonContent">
+        <p aria-busy="true">Загрузка контента...</p>
+      </article>
     `;
   
     app.innerHTML = html;
@@ -374,15 +380,19 @@ const Core = {
     setTimeout(() => {
       const contentDiv = document.getElementById('lessonContent');
       let processedContent = Shortcodes.parse(lesson.content || '');
-      contentDiv.innerHTML = processedContent;
-  
-      const completeBtn = document.createElement('div');
-      completeBtn.innerHTML = `
-        <button onclick="Core.completeLesson('${courseId}', '${lessonId}')" class="btn btn-primary mt-20">
+      
+      const article = document.createElement('article');
+      article.innerHTML = processedContent;
+
+      const completeBtnContainer = document.createElement('footer');
+      completeBtnContainer.style.marginTop = '2rem';
+      completeBtnContainer.innerHTML = `
+        <button onclick="Core.completeLesson('${courseId}', '${lessonId}')">
           Завершить урок
         </button>
       `;
-      contentDiv.appendChild(completeBtn);
+      article.appendChild(completeBtnContainer);
+      contentDiv.replaceWith(article);
     }, 100);
   },
   
@@ -419,12 +429,14 @@ const Core = {
     if (quiz.maxAttempts > 0 && attempts >= quiz.maxAttempts) {
       const app = document.getElementById('app');
       app.innerHTML = `
-        <div class="card info-card fade-in">
+        <article class="fade-in" style="text-align:center;">
           <h2>Тест недоступен</h2>
           <p>Вы исчерпали все ${quiz.maxAttempts} попыток.</p>
           <p>Обратитесь к администратору для сброса.</p>
-          <button onclick="history.back()" class="btn btn-secondary mt-20">Назад</button>
-        </div>
+          <footer>
+            <a href="#" role="button" class="secondary" onclick="event.preventDefault(); history.back()">Назад</a>
+          </footer>
+        </article>
       `;
       return;
     }
@@ -443,21 +455,25 @@ const Core = {
     this.updateMainNavbar(); // Обновляем кнопки в главном navbar
   
     let html = `
-      <div class="card result-card fade-in">
-        <h2>Результат теста</h2>
-        <div class="quiz-score ${isPassed ? 'text-success' : 'text-danger'}">
-          ${result.score}%
-        </div>
-        <p>Вы ${isPassed ? 'прошли' : 'не прошли'} тест.</p>
-        <p>Проходной балл: ${quiz.passingScore}%</p>
+      <article class="result-card fade-in" style="text-align:center;">
+        <hgroup>
+          <h2>Результат теста</h2>
+          <h3 class="${isPassed ? 'text-success' : 'text-danger'}">
+            Ваш результат: ${result.score}%
+          </h3>
+        </hgroup>
+        <p>Вы ${isPassed ? '<strong>прошли</strong>' : '<strong>не прошли</strong>'} тест. Проходной балл: ${quiz.passingScore}%</p>
+        
+        <footer>
+          <div class="grid">
     `;
   
     const attempts = Storage.getQuizAttempts(this.state.currentUser.id, quiz.id);
     if (!isPassed && (quiz.maxAttempts === 0 || attempts < quiz.maxAttempts)) {
       html += `
-        <button onclick="Core.navigateAfterQuiz('quiz', null, null, '${quiz.id}')" class="btn btn-primary mt-20">
+        <a href="#" role="button" onclick="event.preventDefault(); Core.navigateAfterQuiz('quiz', null, null, '${quiz.id}')">
           Пройти повторно
-        </button>
+        </a>
       `;
     }
   
@@ -471,9 +487,9 @@ const Core = {
         if (nextLesson) {
           // Есть следующий урок в текущем курсе
           html += `
-            <button onclick="Core.navigateAfterQuiz('lesson', '${courseId}', '${nextLesson.id}')" class="btn btn-primary mt-20">
-              Перейти к следующему уроку: ${nextLesson.title}
-            </button>
+            <a href="#" role="button" onclick="event.preventDefault(); Core.navigateAfterQuiz('lesson', '${courseId}', '${nextLesson.id}')">
+              Следующий урок
+            </a>
           `;
         } else {
           // Уроков в текущем курсе больше нет, ищем следующий курс
@@ -484,9 +500,9 @@ const Core = {
           if (nextCourse) {
             // Есть следующий курс
             html += `
-              <button onclick="Core.navigateAfterQuiz('course', '${nextCourse.id}')" class="btn btn-primary mt-20">
-                Перейти к следующему курсу: ${nextCourse.title}
-              </button>
+              <a href="#" role="button" onclick="event.preventDefault(); Core.navigateAfterQuiz('course', '${nextCourse.id}')">
+                Следующий курс
+              </a>
             `;
           }
         }
@@ -494,14 +510,13 @@ const Core = {
     }
   
     html += `
-        <div class="button-group mt-20 justify-center">
-          <button onclick="Core.navigateAfterQuiz('course', '${courseId}')" class="btn btn-secondary">Вернуться к урокам</button>
-          <button onclick="Core.navigateAfterQuiz('home')" class="btn btn-secondary">Вернуться к курсам</button>
+          <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Core.navigateAfterQuiz('course', '${courseId}')">К урокам</a>
+          <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Core.navigateAfterQuiz('home')">К курсам</a>
         </div>
-      </div>
+      </footer>
+    </article>
     `;
   
-    console.log('Generated HTML for quiz result:', html); // Добавляем лог
     app.innerHTML = html;
   },
   

@@ -4,19 +4,16 @@
 QuizTypes.single = {
     render(question) {
         const options = [...question.options].sort(() => Math.random() - 0.5);
-        let html = '<div style="margin: 20px 0;">';
-        console.log('QuizTypes.single defined and render called.'); // Добавляем лог
+        let html = '<fieldset>';
         options.forEach((option, index) => {
             html += `
-                <div style="margin: 10px 0;">
-                    <label style="display: flex; align-items: center; cursor: pointer;">
-                        <input type="radio" name="answer" value="${option}" style="margin-right: 10px;">
-                        ${option}
-                    </label>
-                </div>
+                <label for="option_${index}">
+                    <input type="radio" id="option_${index}" name="answer" value="${option}">
+                    ${option}
+                </label>
             `;
         });
-        html += '</div>';
+        html += '</fieldset>';
         return html;
     },
 
@@ -25,7 +22,6 @@ QuizTypes.single = {
         radios.forEach(radio => {
             radio.addEventListener('change', () => {
                 onAnswer(radio.value);
-                nextBtn.disabled = false;
             });
         });
     },

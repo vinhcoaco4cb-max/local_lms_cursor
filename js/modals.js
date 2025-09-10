@@ -4,102 +4,74 @@
  */
 
 const Modals = {
-    // Открыть изображение
-    openImage(src) {
-      this.showModal(`
-        <img src="${src}" alt="Изображение" style="max-width: 100%; max-height: 80vh; display: block; margin: 0 auto;">
-      `);
-    },
-  
-    // Открыть файл (PDF, DOCX, PPTX и т.д.)
-    openFile(src) {
-      const ext = src.split('.').pop().toLowerCase();
-      let content = '';
-  
-      if (ext === 'pdf') {
-        // PDF — пытаемся открыть во встроенном просмотрщике
-        content = `
-          <iframe src="${src}" style="width: 100%; height: 80vh; border: none;" frameborder="0"></iframe>
-        `;
-      } else if (['docx', 'doc', 'pptx', 'ppt', 'odt', 'xls', 'xlsx'].includes(ext)) {
-        // Документы — предлагаем скачать + пробуем открыть в iframe (если браузер поддерживает)
-        content = `
-          <div style="text-align: center; padding: 20px;">
-            <p>Для просмотра этого документа может потребоваться соответствующая программа.</p>
-            <iframe src="${src}" style="width: 100%; height: 60vh; border: 1px solid var(--border); margin: 20px 0;" frameborder="0"></iframe>
-            <a href="${src}" download class="btn btn-primary" style="margin-top: 20px;">Скачать файл</a>
-          </div>
-        `;
-      } else {
-        // Любые другие файлы — просто скачивание
-        content = `
-          <div style="text-align: center; padding: 40px;">
-            <p>Файл готов к скачиванию.</p>
-            <a href="${src}" download class="btn btn-primary" style="margin-top: 20px;">Скачать</a>
-          </div>
-        `;
-      }
-  
-      this.showModal(content);
-    },
-  
-    // Открыть видео
-    openVideo(src) {
-      this.showModal(`
-        <video controls style="max-width: 100%; max-height: 80vh; display: block; margin: 0 auto;">
+  // Открыть изображение
+  openImage(src) {
+    this.showModal(`
+      <figure>
+        <img src="${src}" alt="Изображение">
+      </figure>
+    `, 'modal-lg');
+  },
+
+  // Открыть файл (PDF, DOCX, PPTX и т.д.)
+  openFile(src) {
+    const ext = src.split('.').pop().toLowerCase();
+    let content = '';
+
+    if (ext === 'pdf') {
+      content = `<iframe src="${src}" style="width: 100%; height: 80vh; border: none;" frameborder="0"></iframe>`;
+    } else {
+      content = `
+        <div style="text-align: center; padding: 2rem;">
+          <p>Предварительный просмотр для этого типа файла недоступен.</p>
+          <a href="${src}" download role="button">Скачать файл</a>
+        </div>
+      `;
+    }
+
+    this.showModal(content, 'modal-lg');
+  },
+
+  // Открыть видео
+  openVideo(src) {
+    this.showModal(`
+      <figure>
+        <video controls autoplay>
           <source src="${src}" type="video/mp4">
           Ваш браузер не поддерживает воспроизведение видео.
         </video>
-      `);
-    },
-  
-    // Показать модальное окно с произвольным контентом
-    showModal(content) {
-      // Создаём оверлей, если его ещё нет
-      if (!document.getElementById('modal-overlay')) {
-        const overlay = document.createElement('div');
-        overlay.id = 'modal-overlay';
-        overlay.className = 'modal-overlay';
-        overlay.innerHTML = `
-          <div class="modal">
-            <button class="modal-close">&times;</button>
-            <div id="modal-content"></div>
-          </div>
-        `;
-        document.body.appendChild(overlay);
-  
-        // Закрытие по клику на оверлей
-        overlay.addEventListener('click', (e) => {
-          if (e.target === overlay) {
-            this.closeModal();
-          }
-        });
-  
-        // Закрытие по Esc
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') {
-            this.closeModal();
-          }
-        });
-  
-        // Закрытие по кнопке
-        overlay.querySelector('.modal-close').addEventListener('click', () => {
-          this.closeModal();
-        });
-      }
-  
-      // Устанавливаем контент
-      document.getElementById('modal-content').innerHTML = content;
-  
-      // Показываем
-      document.getElementById('modal-overlay').classList.add('active');
-    },
-  
-    // Закрыть модальное окно
-    closeModal() {
-      const overlay = document.getElementById('modal-overlay');
-      if (overlay) {
-        overlay.classList.remove('active');
-      }
+      </figure>
+    `, 'modal-lg');
+  },
+
+  // Показать модальное окно с произвольным контентом
+  showModal(content, sizeClass = '') {
+    let dialog = document.getElementById('main-modal');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'main-modal';
+        document.body.appendChild(dialog);
     }
-  };
+
+    dialog.innerHTML = `
+      <article class="${sizeClass}">
+          <header>
+              <a href="#close" aria-label="Close" class="close" onclick="event.preventDefault(); Modals.closeModal()"></a>
+          </header>
+          <div id="modal-content">
+              ${content}
+          </div>
+      </article>
+    `;
+
+    dialog.showModal();
+  },
+
+  // Закрыть модальное окно
+  closeModal() {
+    const dialog = document.getElementById('main-modal');
+    if (dialog) {
+      dialog.close();
+    }
+  }
+};
