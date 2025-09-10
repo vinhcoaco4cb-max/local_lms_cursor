@@ -30,54 +30,49 @@ const AdminCourses = {
           <article>
             <header>
               <div class="grid">
-                  <div>
-                      <hgroup>
-                          <h4>${course.title}</h4>
-                          <p>${course.description || ''}</p>
-                      </hgroup>
-                      <small>Уроков: ${course.lessons.length}</small>
-                      <label class="mt-15">
-                          <input type="checkbox" role="switch" ${course.lockUntilPassed ? 'checked' : ''} onchange="AdminCourses.toggleLock('${course.id}')">
-                          Блокировать следующий урок до прохождения
-                      </label>
-                  </div>
-                  <div style="text-align: right;">
-                      <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminCourses.editCourse('${course.id}')">Редактировать</a>
-                      <a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); AdminCourses.deleteCourse('${course.id}')">Удалить</a>
-                  </div>
+                <div>
+                  <hgroup>
+                    <h4>${course.title}</h4>
+                    <p>${course.description || ''}</p>
+                  </hgroup>
+                  <small>Уроков: ${course.lessons.length}</small>
+                </div>
+                <div class="button-group">
+                  <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminCourses.editCourse('${course.id}')">Редактировать</a>
+                  <a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); AdminCourses.deleteCourse('${course.id}')">Удалить</a>
+                </div>
               </div>
             </header>
-            
-            <details>
-              <summary>Уроки</summary>
-              <div>
-                  <header class="page-header">
-                      <h5>Список уроков</h5>
-                      <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminCourses.createLesson('${course.id}')">+ Добавить урок</a>
-                  </header>
-        `;
+            <label>
+              <input type="checkbox" role="switch" ${course.lockUntilPassed ? 'checked' : ''} onchange="AdminCourses.toggleLock('${course.id}')">
+              Блокировать следующий урок до прохождения
+            </label>
+            <hr>
+            <div class="page-header">
+              <h5>Уроки</h5>
+              <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminCourses.createLesson('${course.id}')">+ Добавить урок</a>
+            </div>
+      `;
 
         if (course.lessons.length === 0) {
           html += `<p>Нет уроков. Добавьте первый урок.</p>`;
         } else {
           course.lessons.forEach(lesson => {
             html += `
-              <article class="lesson-admin-item">
-                <strong>${lesson.title}</strong>
-                <div class="button-group">
-                  <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminCourses.editLesson('${course.id}', '${lesson.id}')">Изменить</a>
-                  <a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); AdminCourses.deleteLesson('${course.id}', '${lesson.id}')">×</a>
+              <article class="lesson-item-admin">
+                <div class="lesson-item-content">
+                  <strong>${lesson.title}</strong>
+                  <div class="button-group">
+                    <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminCourses.editLesson('${course.id}', '${lesson.id}')">Редактировать</a>
+                    <a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); AdminCourses.deleteLesson('${course.id}', '${lesson.id}')">×</a>
+                  </div>
                 </div>
               </article>
             `;
           });
         }
 
-        html += `
-              </div>
-            </details>
-          </article>
-        `;
+        html += `</article>`;
       });
     }
 
@@ -112,29 +107,28 @@ const AdminCourses = {
     const app = document.getElementById('app');
     app.innerHTML = `
       <header class="page-header">
-        <hgroup>
-          <h2>${courseId === this.state.editingCourse?.id ? 'Создание курса' : 'Редактирование курса'}</h2>
-          <p>Заполните основную информацию о курсе.</p>
-        </hgroup>
-        <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.render()">← Назад</a>
+          <hgroup>
+              <h2>${course.title ? 'Редактирование курса' : 'Создание курса'}</h2>
+          </hgroup>
+          <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.setTab('courses')">← Назад</a>
       </header>
       <article>
         <form id="courseForm">
-          <label for="courseTitle">
+          <label>
             Название курса *
-            <input type="text" id="courseTitle" name="courseTitle" value="${course.title}" required>
-          </label>
-          <label for="courseDescription">
-            Описание
-            <textarea id="courseDescription" name="courseDescription" rows="3">${course.description || ''}</textarea>
+            <input type="text" id="courseTitle" value="${course.title}" required>
           </label>
           <label>
-            <input type="checkbox" id="courseLock" name="courseLock" role="switch" ${course.lockUntilPassed ? 'checked' : ''}>
-            Блокировать следующий урок до прохождения предыдущего
+            Описание
+            <textarea id="courseDescription" rows="3">${course.description || ''}</textarea>
+          </label>
+          <label>
+            <input type="checkbox" id="courseLock" role="switch" ${course.lockUntilPassed ? 'checked' : ''}>
+            Блокировать следующий урок до прохождения
           </label>
           <footer class="form-footer">
-              <button type="submit">Сохранить</button>
-              <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.render()">Отмена</a>
+            <button type="submit">Сохранить</button>
+            <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.setTab('courses')">Отмена</a>
           </footer>
         </form>
       </article>
@@ -148,13 +142,7 @@ const AdminCourses = {
 
       if (!title) return;
 
-      const updatedCourse = {
-        ...course,
-        title,
-        description,
-        lockUntilPassed
-      };
-
+      const updatedCourse = { ...course, title, description, lockUntilPassed };
       Storage.saveCourse(updatedCourse);
       Admin.setTab('courses');
     });
@@ -164,7 +152,7 @@ const AdminCourses = {
   deleteCourse(courseId) {
     if (confirm('Вы уверены, что хотите удалить курс и все его уроки?')) {
       Storage.deleteCourse(courseId);
-      Admin.render();
+      Admin.setTab('courses');
     }
   },
 
@@ -174,7 +162,6 @@ const AdminCourses = {
     if (course) {
       course.lockUntilPassed = !course.lockUntilPassed;
       Storage.saveCourse(course);
-      // No need to re-render, the switch is now stateful
     }
   },
 
@@ -192,39 +179,55 @@ const AdminCourses = {
   editLesson(courseId, lessonId) {
     const course = Storage.getCourses().find(c => c.id === courseId);
     const lesson = course.lessons.find(l => l.id === lessonId) || this.state.editingLesson;
+    const quizzes = Storage.getQuizzes();
     const app = document.getElementById('app');
+
+    let quizOptions = quizzes.map(q => `<option value="${q.id}">${q.title}</option>`).join('');
+
     app.innerHTML = `
       <header class="page-header">
-          <hgroup>
-              <h2>${lessonId === this.state.editingLesson?.id ? 'Создание урока' : 'Редактирование урока'}</h2>
-              <p>Наполните урок контентом и тестами.</p>
-          </hgroup>
-          <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.render()">← Назад</a>
+        <hgroup>
+          <h2>${lesson.title ? 'Редактирование' : 'Создание'} урока</h2>
+        </hgroup>
+        <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.setTab('courses')">← Назад к курсам</a>
       </header>
       <article>
-          <form id="lessonForm">
-            <label for="lessonTitle">
-              Название урока *
-              <input type="text" id="lessonTitle" value="${lesson.title}" required>
-            </label>
-            <label for="lessonContent">
-              Контент урока (Markdown + шорткоды)
-              <textarea id="lessonContent" name="lessonContent" rows="10" class="monospace-font">${lesson.content || ''}</textarea>
-              <small>
-                <strong>Шорткоды:</strong>
-                <code>[img:...]</code>, <code>[file:...]</code>, <code>[video:...]</code>, <code>[quiz:...]</code>
-              </small>
-            </label>
+        <form id="lessonForm">
+          <label>
+            Название урока *
+            <input type="text" id="lessonTitle" value="${lesson.title}" required>
+          </label>
+          <label>
+            Контент урока (Markdown + шорткоды)
+            <textarea id="lessonContent" rows="10" class="monospace-font">${lesson.content || ''}</textarea>
+            <small>
+              Шорткоды: <code>[img:path/to/image.jpg]</code>, <code>[file:path/to/doc.pdf]</code>, <code>[video:path/to/video.mp4]</code>, <code>[quiz:quiz-id]</code>
+            </small>
+          </label>
 
-            <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminQuizzes.insertQuiz('${courseId}')">+ Вставить тест</a>
-            
-            <footer class="form-footer">
-              <button type="submit">Сохранить</button>
-              <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.render()">Отмена</a>
-            </footer>
-          </form>
+          <hr>
+
+          <fieldset>
+              <legend>Прикрепленные тесты</legend>
+              <div id="attached-quizzes-list"></div>
+              <div class="grid">
+                  <select id="quiz-to-attach">
+                      <option value="">-- Выберите тест --</option>
+                      ${quizOptions}
+                  </select>
+                  <button type="button" class="secondary" onclick="AdminCourses.attachQuiz()">Прикрепить тест</button>
+              </div>
+          </fieldset>
+
+          <footer class="form-footer">
+            <button type="submit">Сохранить урок</button>
+            <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.setTab('courses')">Отмена</a>
+          </footer>
+        </form>
       </article>
     `;
+
+    this.renderAttachedQuizzes();
 
     document.getElementById('lessonForm').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -233,20 +236,23 @@ const AdminCourses = {
 
       if (!title) return;
 
-      const updatedLesson = {
-        ...lesson,
-        title,
-        content
-      };
-
-      const courses = Storage.getCourses();
+      const updatedLesson = { ...lesson, title, content };
+      
+      // --- FIX STARTS HERE ---
+      const courses = Storage.getCourses(); // Get the courses array
       const courseIndex = courses.findIndex(c => c.id === courseId);
+      // --- FIX ENDS HERE ---
+      
       if (courseIndex >= 0) {
         const lessonIndex = courses[courseIndex].lessons.findIndex(l => l.id === lessonId);
         if (lessonIndex >= 0) {
+          // --- FIX STARTS HERE ---
           courses[courseIndex].lessons[lessonIndex] = updatedLesson;
+          // --- FIX ENDS HERE ---
         } else {
+          // --- FIX STARTS HERE ---
           courses[courseIndex].lessons.push(updatedLesson);
+          // --- FIX ENDS HERE ---
         }
         Storage.saveCourses();
       }
@@ -255,15 +261,64 @@ const AdminCourses = {
     });
   },
 
+  renderAttachedQuizzes() {
+      const content = document.getElementById('lessonContent').value;
+      const attachedList = document.getElementById('attached-quizzes-list');
+      const quizIds = (content.match(/\[quiz:([^\]]+)\]/g) || []).map(q => q.slice(6, -1));
+
+      if (quizIds.length === 0) {
+          attachedList.innerHTML = '<p><small>К этому уроку еще не прикреплен ни один тест.</small></p>';
+          return;
+      }
+
+      let html = '';
+      quizIds.forEach(quizId => {
+          const quiz = Storage.getQuiz(quizId);
+          if(quiz) {
+              html += `
+                  <div class="attached-quiz-item">
+                      <span>${quiz.title}</span>
+                      <a href="#" onclick="event.preventDefault(); AdminCourses.detachQuiz('${quizId}')" class="contrast">Удалить</a>
+                  </div>
+              `;
+          }
+      });
+      attachedList.innerHTML = html;
+  },
+
+  attachQuiz() {
+      const select = document.getElementById('quiz-to-attach');
+      const quizId = select.value;
+      if (!quizId) return;
+
+      const textarea = document.getElementById('lessonContent');
+      const shortcode = `\n[quiz:${quizId}]`;
+
+      if (textarea.value.includes(shortcode.trim())) {
+          alert('Этот тест уже прикреплен.');
+          return;
+      }
+
+      textarea.value += shortcode;
+      select.value = ''; // Reset dropdown
+      this.renderAttachedQuizzes();
+  },
+
+  detachQuiz(quizId) {
+      const textarea = document.getElementById('lessonContent');
+      const shortcodeRegex = new RegExp(`\\n?\\[quiz:${quizId}\\]`, 'g');
+      textarea.value = textarea.value.replace(shortcodeRegex, '');
+      this.renderAttachedQuizzes();
+  },
+
   // Удаление урока
   deleteLesson(courseId, lessonId) {
     if (confirm('Вы уверены, что хотите удалить урок?')) {
-      const courses = Storage.getCourses();
-      const courseIndex = courses.findIndex(c => c.id === courseId);
-      if (courseIndex >= 0) {
-        courses[courseIndex].lessons = courses[courseIndex].lessons.filter(l => l.id !== lessonId);
-        Storage.saveCourses();
-        Admin.render();
+      const course = Storage.getCourse(courseId);
+      if (course) {
+        course.lessons = course.lessons.filter(l => l.id !== lessonId);
+        Storage.saveCourse(course);
+        Admin.setTab('courses');
       }
     }
   },
@@ -278,8 +333,9 @@ const AdminCourses = {
       if (file) {
         const reader = new FileReader();
         reader.onload = (event) => {
-          Storage.importCourses(event.target.result);
-          Admin.render();
+          if (Storage.importCourses(event.target.result)) {
+            Admin.setTab('courses');
+          }
         };
         reader.readAsText(file);
       }
@@ -287,3 +343,4 @@ const AdminCourses = {
     input.click();
   }
 };
+

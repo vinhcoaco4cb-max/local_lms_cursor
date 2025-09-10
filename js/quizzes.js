@@ -50,7 +50,6 @@ const Quizzes = {
                 <div id="questionContainer"></div>
                 <footer>
                     <div class="grid">
-                        <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Quizzes.cancelQuiz()">Отмена</a>
                         <a href="#" role="button" id="nextBtn" aria-disabled="true">${this.currentQuestionIndex === quiz.questions.length - 1 ? 'Завершить тест' : 'Далее'}</a>
                     </div>
                 </footer>
@@ -95,6 +94,11 @@ const Quizzes = {
                 this.currentQuestionIndex++;
                 this.renderQuestion();
             } else {
+                // Ensure the "Завершить тест" button is enabled before finishing
+                const nextBtn = document.getElementById('nextBtn');
+                if (nextBtn) {
+                    nextBtn.removeAttribute('aria-disabled');
+                }
                 this.finishQuiz();
             }
         });

@@ -16,33 +16,41 @@ const AdminDashboard = {
 
     let html = `
       <div class="grid">
-        <article style="text-align: center;">
-          <hgroup>
-              <h3>Пользователи</h3>
-              <p>Всего зарегистрировано</p>
-          </hgroup>
-          <div style="font-size: 3rem; font-weight: bold;">${users.length}</div>
+        <article class="dashboard-card">
+          <div class="card-content">
+            <hgroup>
+                <h3>Пользователи</h3>
+                <p>Всего зарегистрировано</p>
+            </hgroup>
+          </div>
+          <div class="stat-number">${users.length}</div>
         </article>
-        <article style="text-align: center;">
-          <hgroup>
-              <h3>Курсы</h3>
-              <p>Всего создано</p>
-          </hgroup>
-          <div style="font-size: 3rem; font-weight: bold;">${courses.length}</div>
+        <article class="dashboard-card">
+          <div class="card-content">
+            <hgroup>
+                <h3>Курсы</h3>
+                <p>Всего создано</p>
+            </hgroup>
+          </div>
+          <div class="stat-number">${courses.length}</div>
         </article>
-        <article style="text-align: center;">
-          <hgroup>
-              <h3>Уроки</h3>
-              <p>Всего в системе</p>
-          </hgroup>
-          <div style="font-size: 3rem; font-weight: bold;">${lessons.length}</div>
+        <article class="dashboard-card">
+          <div class="card-content">
+            <hgroup>
+                <h3>Уроки</h3>
+                <p>Всего в системе</p>
+            </hgroup>
+          </div>
+          <div class="stat-number">${lessons.length}</div>
         </article>
-        <article style="text-align: center;">
-          <hgroup>
-              <h3>Общий прогресс</h3>
-              <p>Процент прохождения</p>
-          </hgroup>
-          <div style="font-size: 3rem; font-weight: bold;">${overallProgress}%</div>
+        <article class="dashboard-card">
+          <div class="card-content">
+            <hgroup>
+                <h3>Общий прогресс</h3>
+                <p>Процент прохождения</p>
+            </hgroup>
+          </div>
+          <div class="stat-number">${overallProgress}%</div>
         </article>
       </div>
       <article>
@@ -57,3 +65,4 @@ const AdminDashboard = {
     return html;
   },
 };
+

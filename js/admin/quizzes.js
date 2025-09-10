@@ -5,7 +5,7 @@
 const AdminQuizzes = {
   state: {
     editingQuiz: null,
-    currentCategoryFilter: '', // Добавляем состояние для фильтрации
+    currentCategoryFilter: '',
   },
   
   renderTab() {
@@ -92,14 +92,11 @@ const AdminQuizzes = {
     const labels = {
       'single': 'Один правильный ответ',
       'multiple': 'Несколько правильных ответов',
-      'dragdrop': 'Перетаскивание (сопоставление)',
-      'dragdrop-categories': 'Перетаскивание по категориям',
+      'truefalse': 'Верно/Неверно',
       'fillblank': 'Заполнение пропусков',
       'sequence': 'Установление последовательности',
-      'hotspot': 'Клик по изображению',
-      'hotspot-multiple': 'Hotspot: Множественные зоны',
-      'hotspot-sequence': 'Hotspot: Последовательность',
-      'truefalse': 'Верно/Неверно'
+      'dragdrop': 'Перетаскивание (сопоставление)',
+      'hotspot': 'Клик по изображению'
     };
     if (getAll) return labels;
     return labels[type] || type;
@@ -128,10 +125,10 @@ const AdminQuizzes = {
     let html = `
       <header class="page-header">
           <hgroup>
-              <h2>${quiz.id === quizId ? 'Создание теста' : 'Редактирование теста'}</h2>
+              <h2>${quiz.title ? 'Редактирование теста' : 'Создание теста'}</h2>
               <p>Настройте параметры теста и добавьте вопросы.</p>
           </hgroup>
-          <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.render()">← Назад</a>
+          <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.setTab('quizzes')">← Назад</a>
       </header>
       <article>
         <form id="quizForm">
@@ -173,22 +170,24 @@ const AdminQuizzes = {
             <h3>Вопросы</h3>
             <a href="#" role="button" class="secondary" onclick="event.preventDefault(); AdminQuizzes.createQuestion()">+ Добавить вопрос</a>
           </header>
-          <div id="questionsContainer" class="grid-gap-20">
+          <div id="questionsContainer">
     `;
     
     (quiz.questions || []).forEach((question, index) => {
         html += `
           <article class="question-admin-item">
-              <hgroup>
-                  <h5>Вопрос #${index + 1} (${this.getQuizTypeLabel(question.type)})</h5>
-                  <p>${question.question || question.text || 'Без текста'}</p>
-              </hgroup>
-              <footer>
-                  <div class="button-group">
-                      <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminQuizzes.editQuestion(${index})">Редактировать</a>
-                      <a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); AdminQuizzes.deleteQuestion(${index})">×</a>
-                  </div>
-              </footer>
+            <div class="grid">
+              <div>
+                  <hgroup>
+                      <h5>Вопрос #${index + 1} (${this.getQuizTypeLabel(question.type)})</h5>
+                      <p>${(question.text || 'Без текста').substring(0, 100)}...</p>
+                  </hgroup>
+              </div>
+              <div class="button-group">
+                  <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminQuizzes.editQuestion(${index})">Редактировать</a>
+                  <a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); AdminQuizzes.deleteQuestion(${index})">×</a>
+              </div>
+            </div>
           </article>
         `;
     });
@@ -197,7 +196,7 @@ const AdminQuizzes = {
           </div>
           <footer class="form-footer">
               <button type="submit">Сохранить тест</button>
-              <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.render()">Отмена</a>
+              <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Admin.setTab('quizzes')">Отмена</a>
           </footer>
         </form>
       </article>
@@ -207,36 +206,37 @@ const AdminQuizzes = {
 
     document.getElementById('quizForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      
-      const title = document.getElementById('quizTitle').value.trim();
-      const category = document.getElementById('quizCategory').value.trim();
-      const maxScore = parseInt(document.getElementById('quizMaxScore').value) || 100;
-      const passingScore = parseInt(document.getElementById('quizPassingScore').value) || 80;
-      const maxAttempts = parseInt(document.getElementById('quizMaxAttempts').value) || 0;
-      const timeLimit = parseInt(document.getElementById('quizTimeLimit').value) || 0;
-      const shuffle = document.getElementById('quizShuffle').checked;
-
-      if (!title) return;
-
-      let updatedQuiz = {
-        ...(this.state.editingQuiz || {}),
-        title,
-        category,
-        maxScore,
-        passingScore,
-        maxAttempts,
-        timeLimit,
-        shuffle
-      };
-
-      Storage.saveQuiz(updatedQuiz);
+      this.saveQuizDetails();
       Admin.setTab('quizzes');
     });
+  },
+
+  saveQuizDetails() {
+    const quiz = this.state.editingQuiz;
+    if (!quiz) return;
+
+    quiz.title = document.getElementById('quizTitle').value.trim();
+    quiz.category = document.getElementById('quizCategory').value.trim();
+    quiz.maxScore = parseInt(document.getElementById('quizMaxScore').value) || 100;
+    quiz.passingScore = parseInt(document.getElementById('quizPassingScore').value) || 80;
+    quiz.maxAttempts = parseInt(document.getElementById('quizMaxAttempts').value) || 0;
+    quiz.timeLimit = parseInt(document.getElementById('quizTimeLimit').value) || 0;
+    quiz.shuffle = document.getElementById('quizShuffle').checked;
+    
+    Storage.saveQuiz(quiz);
   },
   
   createQuestion() {
     if (!this.state.editingQuiz) return;
-    this.showQuestionTypeSelectionModal(); // Вызываем модальное окно выбора типа
+    this.saveQuizDetails();
+
+    const newQuestion = { type: 'single', text: '' }; 
+    if (!this.state.editingQuiz.questions) {
+      this.state.editingQuiz.questions = [];
+    }
+    this.state.editingQuiz.questions.push(newQuestion);
+    
+    this.editQuestion(this.state.editingQuiz.questions.length - 1);
   },
 
   editQuestion(questionIndex) {
@@ -248,7 +248,7 @@ const AdminQuizzes = {
     let html = `
       <header class="page-header">
           <hgroup>
-              <h2>Редактирование вопроса #${questionIndex + 1}</h2>
+              <h2>${question.text ? 'Редактирование' : 'Создание'} вопроса #${questionIndex + 1}</h2>
               <p>Выберите тип вопроса и заполните его содержание.</p>
           </hgroup>
           <a href="#" role="button" class="secondary" onclick="event.preventDefault(); AdminQuizzes.editQuiz('${quiz.id}')">← Назад к тесту</a>
@@ -258,21 +258,19 @@ const AdminQuizzes = {
           <label for="questionType">
             Тип вопроса *
             <select id="questionType" required>
-              <option value="single" ${question.type === 'single' ? 'selected' : ''}>Один правильный ответ</option>
-              <option value="multiple" ${question.type === 'multiple' ? 'selected' : ''}>Несколько правильных ответов</option>
-              <option value="truefalse" ${question.type === 'truefalse' ? 'selected' : ''}>Верно/Неверно</option>
-              <option value="fillblank" ${question.type === 'fillblank' ? 'selected' : ''}>Заполнение пропусков</option>
-              <!-- More types can be added here -->
+    `;
+    
+    const allTypes = this.getQuizTypeLabel(null, true);
+    for(const type in allTypes) {
+        html += `<option value="${type}" ${question.type === type ? 'selected' : ''}>${allTypes[type]}</option>`;
+    }
+
+    html += `
             </select>
           </label>
-    `;
-
-    // The rest of the form fields will be dynamically rendered based on type
-    html += `<div id="dynamic-fields">`;
-    html += this.renderQuestionFields(question);
-    html += `</div>`;
-    
-    html += `
+          <div id="dynamic-fields">
+            ${this.renderQuestionFields(question)}
+          </div>
           <footer class="form-footer">
               <button type="submit">Сохранить вопрос</button>
               <a href="#" role="button" class="secondary" onclick="event.preventDefault(); AdminQuizzes.editQuiz('${quiz.id}')">Отмена</a>
@@ -285,45 +283,85 @@ const AdminQuizzes = {
 
     document.getElementById('questionType').addEventListener('change', (e) => {
         const newType = e.target.value;
-        const oldQuestionData = this.collectQuestionData(question.type);
-        const newQuestion = { ...oldQuestionData, type: newType, options: [], correct: [] }; // Reset options/correct on type change
-        quiz.questions[questionIndex] = newQuestion;
+        const textInput = document.querySelector('#dynamic-fields textarea');
+        const currentText = textInput ? textInput.value : question.text;
+
+        quiz.questions[questionIndex] = { 
+            type: newType, 
+            text: currentText || ''
+        };
+        
         this.editQuestion(questionIndex);
     });
 
     document.getElementById('questionForm').addEventListener('submit', (e) => {
         e.preventDefault();
-        const updatedQuestion = this.collectQuestionData(question.type);
-
+        const updatedQuestion = this.collectQuestionData(document.getElementById('questionType').value);
         quiz.questions[questionIndex] = updatedQuestion;
-        this.state.editingQuiz.questions = quiz.questions;
-        Storage.saveQuiz(this.state.editingQuiz);
-        AdminQuizzes.editQuiz(quiz.id);
+        Storage.saveQuiz(quiz);
+        this.editQuiz(quiz.id);
     });
   },
-
+  
   renderQuestionFields(question) {
-      switch (question.type) {
-          case 'single':
-          case 'multiple':
-          case 'truefalse':
-            return this.renderOptionsFields(question);
-          // Other cases will be added here
-          default:
-            return '';
-      }
+    let fieldsHtml = '';
+    const mainTextInputId = 'questionText'; 
+    
+    fieldsHtml += `
+      <label for="${mainTextInputId}">
+        Текст вопроса/инструкция *
+        <textarea id="${mainTextInputId}" rows="2" required>${question.text || ''}</textarea>
+      </label>
+    `;
+
+    switch (question.type) {
+        case 'single':
+        case 'multiple':
+        case 'truefalse':
+          fieldsHtml += this.renderOptionsFields(question);
+          break;
+        case 'fillblank':
+          fieldsHtml += this.renderFillBlankFields(question);
+          break;
+        case 'sequence':
+          fieldsHtml += this.renderSequenceFields(question);
+          break;
+        case 'dragdrop':
+          fieldsHtml += this.renderDragDropFields(question);
+          break;
+        case 'hotspot':
+          fieldsHtml += this.renderHotspotFields(question);
+          break;
+    }
+    return fieldsHtml;
   },
 
   collectQuestionData(type) {
+      let data = { 
+        type: type,
+        text: document.getElementById('questionText').value.trim() 
+      };
+
       switch (type) {
           case 'single':
           case 'multiple':
           case 'truefalse':
-            return this.collectOptionsData({ type });
-          // Other cases will be added here
-          default:
-            return { type };
+            Object.assign(data, this.collectOptionsData());
+            break;
+          case 'fillblank':
+            Object.assign(data, this.collectFillBlankData());
+            break;
+          case 'sequence':
+            Object.assign(data, this.collectSequenceData());
+            break;
+          case 'dragdrop':
+            Object.assign(data, this.collectDragDropData());
+            break;
+          case 'hotspot':
+            Object.assign(data, this.collectHotspotData());
+            break;
       }
+      return data;
   },
   
   deleteQuestion(questionIndex) {
@@ -331,121 +369,267 @@ const AdminQuizzes = {
     const quiz = this.state.editingQuiz;
     if (confirm('Вы уверены, что хотите удалить этот вопрос?')) {
       quiz.questions.splice(questionIndex, 1);
+      Storage.saveQuiz(quiz);
       this.editQuiz(quiz.id);
     }
   },
   
+  // --- Methods for SINGLE, MULTIPLE, TRUEFALSE ---
   renderOptionsFields(question) {
-    let html = `
-      <label for="questionText">
-        Текст вопроса *
-        <textarea id="questionText" rows="2" required>${question.question || ''}</textarea>
-      </label>
-      <fieldset id="optionsContainer">
-        <legend>Варианты ответов</legend>
-    `;
-    
-    const options = question.type === 'truefalse' ? ['Верно', 'Неверно'] : (question.options || []);
+    let html = `<fieldset id="optionsContainer"><legend>Варианты ответов</legend>`;
+    const options = question.type === 'truefalse' ? ['Верно', 'Неверно'] : (question.options || ['','']);
     const correct = question.correct || [];
     const inputType = question.type === 'single' || question.type === 'truefalse' ? 'radio' : 'checkbox';
+    for (let i = 0; i < options.length; i++) {
+        html += this.getOptionHTML(i, options[i], correct.includes(i), inputType, question.type === 'truefalse');
+    }
+    html += `</fieldset>`;
+    if (question.type !== 'truefalse') {
+        html += `<a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminQuizzes.addOption()">+ Добавить вариант</a>`;
+    }
+    return html;
+  },
 
-    for (let i = 0; i < Math.max(options.length, 2); i++) {
-      const optionText = options[i] || '';
-      const isChecked = correct.includes(i);
-      
-      html += `
+  getOptionHTML(index, text, isChecked, inputType, isReadonly) {
+      return `
         <div class="option-item">
-          <input type="${inputType}" name="correct" value="${i}" id="option_${i}" ${isChecked ? 'checked' : ''}>
-          <input type="text" class="option-input" value="${optionText}" placeholder="Текст ответа" ${question.type === 'truefalse' ? 'readonly' : ''}>
-          ${question.type !== 'truefalse' ? `<button type="button" class="contrast outline" onclick="this.closest('.option-item').remove()">×</button>` : ''}
+          <input type="${inputType}" name="correct" value="${index}" id="option_${index}" ${isChecked ? 'checked' : ''}>
+          <input type="text" class="option-input" value="${text}" placeholder="Текст ответа" ${isReadonly ? 'readonly' : ''}>
+          ${!isReadonly ? `<a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); this.closest('.option-item').remove()">×</a>` : ''}
         </div>
       `;
-    }
-
-    html += `
-      </fieldset>
-      ${question.type !== 'truefalse' ? `<a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminQuizzes.addOption()">+ Добавить вариант</a>` : ''}
-    `;
-
-    return html;
   },
 
   addOption() {
     const container = document.getElementById('optionsContainer');
     const index = container.querySelectorAll('.option-item').length;
-    const div = document.createElement('div');
-    div.className = 'option-item';
-    
     const type = document.getElementById('questionType').value;
     const inputType = (type === 'single' || type === 'truefalse') ? 'radio' : 'checkbox';
-
-    div.innerHTML = `
-      <input type="${inputType}" name="correct" value="${index}" id="option_${index}">
-      <input type="text" class="option-input" placeholder="Текст ответа">
-      <button type="button" class="contrast outline" onclick="this.closest('.option-item').remove()">×</button>
-    `;
-    container.appendChild(div);
+    container.insertAdjacentHTML('beforeend', this.getOptionHTML(index, '', false, inputType, false));
   },
   
-  collectOptionsData(question) {
-    const questionText = document.getElementById('questionText').value.trim();
+  collectOptionsData() {
+    const data = {};
     const optionInputs = document.querySelectorAll('.option-input');
+    data.options = Array.from(optionInputs).map(input => input.value.trim());
     const correctInputs = document.querySelectorAll(`input[name="correct"]:checked`);
-    
-    const options = Array.from(optionInputs).map(input => input.value.trim()).filter(v => v);
-    const correct = Array.from(correctInputs).map(input => parseInt(input.value));
-    
-    return {
-      ...question,
-      question: questionText,
-      options,
-      correct
-    };
+    data.correct = Array.from(correctInputs).map(input => parseInt(input.value));
+    return data;
+  },
+
+  // --- Methods for FILLBLANK ---
+  renderFillBlankFields(question) {
+    return `
+      <p><small>Используйте ___ (три знака подчеркивания) для обозначения пропуска в тексте вопроса выше.</small></p>
+      <label for="fillCorrect">
+        Правильные ответы (через запятую) *
+        <input type="text" id="fillCorrect" name="fillCorrect" value="${(question.correctAnswers || []).join(', ')}" required>
+      </label>
+    `;
+  },
+
+  collectFillBlankData() {
+    const data = {};
+    data.correctAnswers = document.getElementById('fillCorrect').value.split(',').map(s => s.trim()).filter(Boolean);
+    return data;
+  },
+
+  // --- Methods for SEQUENCE ---
+  renderSequenceFields(question) {
+    let html = `<fieldset id="stepsContainer"><legend>Шаги в правильном порядке</legend>`;
+    (question.steps || ['','']).forEach(step => {
+        html += this.getSequenceStepHTML(step);
+    });
+    html += `</fieldset>
+      <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminQuizzes.addSequenceStep()">+ Добавить шаг</a>`;
+    return html;
+  },
+
+  getSequenceStepHTML(text) {
+    return `
+      <div class="sequence-step-item">
+        <input type="text" class="sequence-step-input" value="${text}" placeholder="Текст шага">
+        <a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); this.closest('.sequence-step-item').remove()">×</a>
+      </div>
+    `;
+  },
+
+  addSequenceStep() {
+    document.getElementById('stepsContainer').insertAdjacentHTML('beforeend', this.getSequenceStepHTML(''));
+  },
+
+  collectSequenceData() {
+    const data = {};
+    const stepInputs = document.querySelectorAll('.sequence-step-input');
+    data.steps = Array.from(stepInputs).map(input => input.value.trim()).filter(Boolean);
+    return data;
   },
   
+  // --- Methods for DRAGDROP ---
+  renderDragDropFields(question) {
+      let html = `
+        <fieldset>
+            <legend>Элементы для перетаскивания (Draggables)</legend>
+            <div id="drag-items-container">
+      `;
+      (question.items || ['','']).forEach(item => {
+          html += `<div class="option-item"><input type="text" class="drag-item-input" value="${item}" placeholder="Текст элемента"><a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); this.closest('.option-item').remove(); AdminQuizzes.updateDragDropMappings()">×</a></div>`;
+      });
+      html += `
+            </div>
+            <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminQuizzes.addDragItem()">+ Добавить элемент</a>
+        </fieldset>
+        <fieldset>
+            <legend>Цели (Dropzones)</legend>
+            <div id="drop-targets-container">
+      `;
+      (question.targets || ['','']).forEach(target => {
+        html += `<div class="option-item"><input type="text" class="drop-target-input" value="${target}" placeholder="Текст цели"><a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); this.closest('.option-item').remove(); AdminQuizzes.updateDragDropMappings()">×</a></div>`;
+      });
+      html += `
+            </div>
+            <a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); AdminQuizzes.addDropTarget()">+ Добавить цель</a>
+        </fieldset>
+        <fieldset>
+            <legend>Правильные сопоставления</legend>
+            <p><small>Сопоставьте каждый элемент с его правильной целью.</small></p>
+            <div id="mappings-container"></div>
+        </fieldset>
+      `;
+      setTimeout(() => this.updateDragDropMappings(question.mappings), 0);
+      return html;
+  },
+  addDragItem() {
+    document.getElementById('drag-items-container').insertAdjacentHTML('beforeend', `<div class="option-item"><input type="text" class="drag-item-input" placeholder="Текст элемента"><a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); this.closest('.option-item').remove(); AdminQuizzes.updateDragDropMappings()">×</a></div>`);
+    this.updateDragDropMappings();
+  },
+  addDropTarget() {
+    document.getElementById('drop-targets-container').insertAdjacentHTML('beforeend', `<div class="option-item"><input type="text" class="drop-target-input" placeholder="Текст цели"><a href="#" role="button" class="contrast outline" onclick="event.preventDefault(); this.closest('.option-item').remove(); AdminQuizzes.updateDragDropMappings()">×</a></div>`);
+    this.updateDragDropMappings();
+  },
+  updateDragDropMappings(mappings = []) {
+      const items = Array.from(document.querySelectorAll('.drag-item-input')).map(i => i.value).filter(Boolean);
+      const targets = Array.from(document.querySelectorAll('.drop-target-input')).map(i => i.value).filter(Boolean);
+      const mappingsContainer = document.getElementById('mappings-container');
+      
+      Array.from(document.querySelectorAll('.drag-item-input, .drop-target-input')).forEach(el => {
+        el.oninput = () => this.updateDragDropMappings();
+      });
+
+      let html = '';
+      items.forEach((item) => {
+          const currentMapping = mappings.find(m => m.item === item);
+          html += `
+            <div class="grid">
+                <label for="map_${item}">${item}</label>
+                <select id="map_${item}" data-item-map="${item}">
+                    <option value="">-- Выберите цель --</option>
+                    ${targets.map(target => `<option value="${target}" ${currentMapping && currentMapping.target === target ? 'selected' : ''}>${target}</option>`).join('')}
+                </select>
+            </div>
+          `;
+      });
+      mappingsContainer.innerHTML = html;
+  },
+  collectDragDropData() {
+      const data = {};
+      data.items = Array.from(document.querySelectorAll('.drag-item-input')).map(i => i.value.trim()).filter(Boolean);
+      data.targets = Array.from(document.querySelectorAll('.drop-target-input')).map(i => i.value.trim()).filter(Boolean);
+      data.mappings = [];
+      document.querySelectorAll('#mappings-container select').forEach(select => {
+          if (select.value) {
+              data.mappings.push({ item: select.dataset.itemMap, target: select.value });
+          }
+      });
+      return data;
+  },
+
+  // --- Methods for HOTSPOT ---
+  renderHotspotFields(question) {
+      let html = `
+        <label for="hotspotImage">
+          URL изображения *
+          <input type="text" id="hotspotImage" name="hotspotImage" value="${question.image || ''}" required oninput="document.getElementById('hotspot-preview').src = this.value">
+        </label>
+        <fieldset>
+            <legend>Зона ответа</legend>
+            <p><small>Кликните по превью, чтобы установить центр правильной зоны. Укажите радиус в пикселях.</small></p>
+            <div class="grid">
+                <label>X: <input type="number" id="hotspotX" readonly value="${question.zone?.x || ''}"></label>
+                <label>Y: <input type="number" id="hotspotY" readonly value="${question.zone?.y || ''}"></label>
+                <label>Радиус: <input type="number" id="hotspotTolerance" value="${question.zone?.tolerance || 20}"></label>
+            </div>
+            <div id="hotspot-preview-container" style="position: relative; margin-top: 1rem; max-width: 400px; display: inline-block;">
+                <img id="hotspot-preview" src="${question.image || ''}" style="max-width: 100%; display: block;" />
+            </div>
+        </fieldset>
+      `;
+      setTimeout(() => this.initHotspotPreview(), 0);
+      return html;
+  },
+  initHotspotPreview() {
+      const container = document.getElementById('hotspot-preview-container');
+      const img = document.getElementById('hotspot-preview');
+      const xInput = document.getElementById('hotspotX');
+      const yInput = document.getElementById('hotspotY');
+      const toleranceInput = document.getElementById('hotspotTolerance');
+      if (!container || !img) return;
+
+      const updateMarker = () => {
+          let marker = container.querySelector('.hotspot-marker');
+          if (!marker) {
+              marker = document.createElement('div');
+              marker.className = 'hotspot-marker admin-marker';
+              container.appendChild(marker);
+          }
+          if (xInput.value && yInput.value && img.naturalWidth > 0) {
+              const rect = img.getBoundingClientRect();
+              const scale = rect.width / img.naturalWidth;
+              marker.style.left = `${parseInt(xInput.value) * scale}px`;
+              marker.style.top = `${parseInt(yInput.value) * scale}px`;
+              const radius = parseInt(toleranceInput.value) || 0;
+              marker.style.width = `${radius * 2 * scale}px`;
+              marker.style.height = `${radius * 2 * scale}px`;
+              marker.style.display = 'flex';
+          } else {
+              if (marker) marker.style.display = 'none';
+          }
+      };
+      
+      const setCoordinates = (e) => {
+          if (img.naturalWidth === 0) return;
+          const rect = e.target.getBoundingClientRect();
+          const scale = e.target.naturalWidth / rect.width;
+          const x = Math.round((e.clientX - rect.left) * scale);
+          const y = Math.round((e.clientY - rect.top) * scale);
+          xInput.value = x;
+          yInput.value = y;
+          updateMarker();
+      }
+
+      img.addEventListener('click', setCoordinates);
+      img.addEventListener('load', updateMarker);
+      toleranceInput.addEventListener('input', updateMarker);
+      
+      if(img.complete) updateMarker();
+  },
+  collectHotspotData() {
+      const data = {};
+      data.image = document.getElementById('hotspotImage').value.trim();
+      data.zone = {
+          x: parseInt(document.getElementById('hotspotX').value) || 0,
+          y: parseInt(document.getElementById('hotspotY').value) || 0,
+          tolerance: parseInt(document.getElementById('hotspotTolerance').value) || 20
+      };
+      return data;
+  },
+
+  // --- Generic Methods ---
   deleteQuiz(quizId) {
     if (confirm('Вы уверены, что хотите удалить тест?')) {
       Storage.deleteQuiz(quizId);
-      Admin.render();
+      Admin.setTab('quizzes');
     }
-  },
-
-  insertQuiz(courseId) {
-    const quizzes = Storage.getQuizzes();
-    let quizListHtml = '';
-
-    if (quizzes.length === 0) {
-      quizListHtml = '<p>Нет доступных тестов. Создайте их на вкладке "Тесты".</p>';
-    } else {
-      quizListHtml += '<div class="grid">';
-      quizzes.forEach(quiz => {
-        quizListHtml += `
-          <a href="#" role="button" class="secondary" onclick="event.preventDefault(); AdminQuizzes.selectQuizForLesson('${courseId}', '${quiz.id}')">
-            ${quiz.title} <small>(${quiz.questions?.length || 0} вопр.)</small>
-          </a>
-        `;
-      });
-      quizListHtml += '</div>';
-    }
-
-    Modals.showModal(`
-      <hgroup>
-          <h3>Выберите тест для вставки</h3>
-          <p>Шорткод теста будет добавлен в конец урока.</p>
-      </hgroup>
-      ${quizListHtml}
-    `);
-  },
-  
-  selectQuizForLesson(courseId, quizId) {
-    const lessonContentTextarea = document.getElementById('lessonContent');
-    if (lessonContentTextarea) {
-      const quizShortcode = `\n[quiz:${quizId}]`;
-      lessonContentTextarea.value += quizShortcode;
-      lessonContentTextarea.focus();
-      lessonContentTextarea.scrollTop = lessonContentTextarea.scrollHeight;
-    }
-    Modals.closeModal();
   },
 
   importQuizzes() {
@@ -464,34 +648,6 @@ const AdminQuizzes = {
       }
     };
     input.click();
-  },
-
-  showQuestionTypeSelectionModal() {
-    let htmlContent = `<hgroup><h3>Выберите тип вопроса</h3><p>Это определит, как пользователь будет на него отвечать.</p></hgroup><div class="grid">`;
-
-    const quizTypes = this.getQuizTypeLabel(null, true);
-
-    for (const type in quizTypes) {
-      htmlContent += `
-        <a href="#" role="button" class="secondary" onclick="event.preventDefault(); AdminQuizzes.selectQuestionTypeAndCreate('${type}')">
-          ${quizTypes[type]}
-        </a>
-      `;
-    }
-
-    htmlContent += `</div>`;
-    Modals.showModal(htmlContent);
-  },
-
-  selectQuestionTypeAndCreate(type) {
-    if (!this.state.editingQuiz) return;
-
-    const newQuestion = { type: type };
-    
-    const quiz = this.state.editingQuiz;
-    if (!quiz.questions) quiz.questions = [];
-    quiz.questions.push(newQuestion);
-    Modals.closeModal();
-    this.editQuestion(quiz.questions.length - 1);
   }
 };
+

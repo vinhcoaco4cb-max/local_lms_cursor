@@ -30,17 +30,8 @@ const Core = {
     Storage.loadCourses();
     Storage.loadQuizzes();
 
-    if (this.state.currentUser) {
-      this.state.isLoggedIn = true;
-      // Проверяем, является ли пользователь администратором
-      if (this.state.isAdmin) {
-        this.setView('admin'); // Если админ, переходим в админку
-      } else {
-        this.renderHome(); // Иначе на домашнюю страницу
-      }
-    } else {
-      this.setView('login');
-    }
+    // Первоначальная отрисовка на основе состояния
+    this.render();
   },
 
   // Загрузка текущего пользователя из localStorage
@@ -48,23 +39,13 @@ const Core = {
     const saved = localStorage.getItem('currentUser');
     if (saved) {
       this.state.currentUser = JSON.parse(saved);
+      this.state.isLoggedIn = true;
       if (this.state.currentUser.id === 'admin') {
-        this.state.isAdmin = true; // Устанавливаем флаг администратора
+        this.state.isAdmin = true;
+        this.state.isAdminMode = true; // Админ всегда начинает в режиме админки
       }
-    }
-  },
-
-  // Переключение между режимами (обучение / админка)
-  toggleAdminMode() {
-    if (!this.state.isAdmin) return;
-
-    this.state.isAdminMode = !this.state.isAdminMode;
-
-    // После переключения режима, устанавливаем соответствующее представление
-    if (this.state.isAdminMode) {
-      this.setView('admin');
     } else {
-      this.setView('home');
+        this.state.isLoggedIn = false;
     }
   },
 
@@ -77,15 +58,43 @@ const Core = {
 
   // Основной рендеринг — переключает экраны
   render() {
-    const app = document.getElementById('app');
-
-    switch (this.state.currentView) {
-      case 'login':
-        this.renderLoginScreen();
-        break;
-      case 'register':
+    if (!this.state.isLoggedIn) {
+      // Если пользователь не залогинен, показываем экран входа или регистрации
+      if (this.state.currentView === 'register') {
         this.renderUserRegistration();
-        break;
+      } else {
+        this.renderLoginScreen();
+      }
+      return;
+    }
+    
+    if (this.state.isAdminMode) {
+      this.renderAdminView();
+    } else {
+      this.renderStudentView();
+    }
+  },
+
+  // Рендер для студента
+  renderStudentView() {
+    const header = document.getElementById('main-header');
+    
+    // Рендер шапки для студента
+    header.innerHTML = `
+      <nav>
+        <ul>
+          <li><strong>Платформа обучения</strong></li>
+        </ul>
+        <ul class="user-menu">
+          ${this.state.currentUser ? `<li><span>${this.state.currentUser.name}</span></li>` : ''}
+          ${this.state.isAdmin ? `<li><a href="#" role="button" class="contrast" onclick="event.preventDefault(); Core.toggleAdminMode()">В админку</a></li>` : ''}
+          <li><a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); Core.switchUser()">Выйти</a></li>
+        </ul>
+      </nav>
+    `;
+
+    // Рендер контента для студента
+    switch (this.state.currentView) {
       case 'home':
         this.renderHome();
         break;
@@ -98,27 +107,40 @@ const Core = {
       case 'quiz':
         this.renderQuiz(this.state.currentQuizId);
         break;
-      case 'admin':
-        Admin.render();
-        break;
-      case 'reports':
-        Reports.render();
+      case 'register': // Добавляем обработку для нового представления 'register'
+        this.renderUserRegistration();
         break;
       default:
-        app.innerHTML = '<h2>Страница не найдена</h2>';
+        this.renderHome(); // По умолчанию показываем домашнюю страницу студента
     }
+  },
+
+  // Рендер для админа
+  renderAdminView() {
+      Admin.render();
+  },
+
+  toggleAdminMode() {
+      this.state.isAdminMode = !this.state.isAdminMode;
+      this.render();
   },
   
   // Экран выбора роли
   renderLoginScreen() {
+    this.state.currentView = 'login'; // Устанавливаем текущий вид
     const app = document.getElementById('app');
+    const header = document.getElementById('main-header');
+    header.innerHTML = ''; // Очищаем шапку на экране входа
+
     app.innerHTML = `
       <article class="fade-in" style="max-width: 500px; margin: 50px auto; text-align: center;">
         <h2>Добро пожаловать</h2>
         <p style="margin-bottom: 25px;">Выберите вашу роль для входа в систему.</p>
         <footer>
-          <button onclick="Core.setView('register')">Я — обучаемый</button>
-          <button onclick="Core.renderAdminLogin()" class="secondary">Я — администратор</button>
+          <div class="grid">
+            <button onclick="Core.setView('register')">Я — обучаемый</button>
+            <button onclick="Core.renderAdminLogin()" class="secondary">Я — администратор</button>
+          </div>
         </footer>
       </article>
     `;
@@ -129,7 +151,7 @@ const Core = {
     const app = document.getElementById('app');
     app.innerHTML = `
       <article class="fade-in" style="max-width: 500px; margin: 50px auto;">
-        <a href="#" onclick="event.preventDefault(); Core.setView('login')" class="secondary" style="margin-bottom: 20px;">← Назад</a>
+        <a href="#" onclick="event.preventDefault(); Core.renderLoginScreen()" class="secondary" style="margin-bottom: 20px;">← Назад</a>
         <h2>Вход для администратора</h2>
         <form id="adminLoginForm">
           <label for="adminLogin">
@@ -151,9 +173,10 @@ const Core = {
       if (login === this.ADMIN_CREDENTIALS.login && password === this.ADMIN_CREDENTIALS.password) {
         this.state.isAdmin = true;
         this.state.isLoggedIn = true;
+        this.state.isAdminMode = true;
         this.state.currentUser = { id: 'admin', name: 'Администратор', department: 'Админка' };
-        localStorage.setItem('currentUser', JSON.stringify(this.state.currentUser)); // Сохраняем admin пользователя в localStorage
-        this.setView('admin'); // Перенаправляем в админку
+        localStorage.setItem('currentUser', JSON.stringify(this.state.currentUser));
+        this.render();
       } else {
         alert('Неверный логин или пароль');
       }
@@ -162,10 +185,11 @@ const Core = {
 
   // Экран регистрации пользователя
   renderUserRegistration() {
+    this.state.currentView = 'register';
     const app = document.getElementById('app');
     app.innerHTML = `
       <article class="fade-in" style="max-width: 500px; margin: 50px auto;">
-        <a href="#" onclick="event.preventDefault(); Core.setView('login')" class="secondary" style="margin-bottom: 20px;">← Назад</a>
+        <a href="#" onclick="event.preventDefault(); Core.renderLoginScreen()" class="secondary" style="margin-bottom: 20px;">← Назад</a>
         <h2>Регистрация</h2>
         <p>Пожалуйста, введите ваши данные для начала обучения.</p>
         <form id="userForm">
@@ -197,36 +221,29 @@ const Core = {
       };
 
       localStorage.setItem('currentUser', JSON.stringify(user));
-      localStorage.setItem(`user_${user.id}`, JSON.stringify(user)); // Add this line
+      localStorage.setItem(`user_${user.id}`, JSON.stringify(user));
+      
       this.state.currentUser = user;
       this.state.isLoggedIn = true;
       this.state.isAdmin = false;
-
-      this.renderHome();
+      this.state.isAdminMode = false;
+      this.setView('home');
     });
   },
 
   // Главная страница — список курсов
   renderHome() {
-    if (!this.state.isLoggedIn) {
-      this.setView('login');
-      return;
-    }
-  
-    this.updateMainNavbar(); // Обновляем кнопки в главном navbar
-  
     const app = document.getElementById('app');
     let html = `
       <header>
-        <h1 class="page-title">Платформа обучения</h1>
+        <h1 class="page-title">Доступные курсы</h1>
       </header>
     `;
   
     const courses = Storage.getCourses();
-    html += `<h2>Доступные курсы</h2>`;
   
     if (courses.length === 0) {
-      html += `<article><p>Нет доступных курсов. Перейдите в админку для создания.</p></article>`;
+      html += `<article><p>Нет доступных курсов. Обратитесь к администратору.</p></article>`;
     } else {
       html += `<div class="grid">`;
       courses.forEach(course => {
@@ -248,7 +265,7 @@ const Core = {
             </p>
             <footer>
               <a href="#" role="button" onclick="event.preventDefault(); Core.setView('course', { currentCourseId: '${course.id}' })">
-                ${percent === 100 ? 'Повторить' : 'Начать'}
+                ${percent === 100 ? 'Повторить' : 'Продолжить'}
               </a>
             </footer>
           </article>
@@ -260,39 +277,15 @@ const Core = {
     app.innerHTML = html;
   },
   
-  // Обновление кнопок в основном navbar
-  updateMainNavbar() {
-    const mainNavButtons = document.getElementById('main-nav-buttons');
-    if (mainNavButtons) {
-      mainNavButtons.innerHTML = `
-        <li>${this.state.currentUser.name}</li>
-        <li><a href="#" role="button" onclick="event.preventDefault(); Core.switchUser()" class="secondary outline">Сменить</a></li>
-        ${this.state.isAdmin ? `
-        <li>
-          <a href="#" role="button" onclick="event.preventDefault(); Core.toggleAdminMode()" class="contrast">
-            ${this.state.isAdminMode ? 'К обучению' : 'В админку'}
-          </a>
-        </li>
-        ` : ''}
-      `;
-    }
-  },
-  
   // Страница курса — список уроков
   renderCourse(courseId) {
-    if (!this.state.isLoggedIn) {
-      this.setView('login');
-      return;
-    }
+    const app = document.getElementById('app');
     const course = Storage.getCourses().find(c => c.id === courseId);
     if (!course) {
       this.setView('home');
       return;
     }
   
-    this.updateMainNavbar(); // Обновляем кнопки в главном navbar
-  
-    const app = document.getElementById('app');
     let html = `
       <header class="page-header">
         <hgroup>
@@ -344,10 +337,7 @@ const Core = {
   
   // Страница урока — контент + тесты
   renderLesson(courseId, lessonId) {
-    if (!this.state.isLoggedIn) {
-      this.setView('login');
-      return;
-    }
+    const app = document.getElementById('app');
     const course = Storage.getCourse(courseId);
     const lesson = course.lessons.find(l => l.id === lessonId);
     if (!lesson) {
@@ -355,13 +345,9 @@ const Core = {
       return;
     }
   
-    // Устанавливаем текущие курс и урок в состояние для глобального доступа
     this.state.currentCourseId = courseId;
     this.state.currentLessonId = lessonId;
   
-    this.updateMainNavbar(); // Обновляем кнопки в главном navbar
-  
-    const app = document.getElementById('app');
     let html = `
        <header class="page-header">
         <hgroup>
@@ -384,46 +370,28 @@ const Core = {
       const article = document.createElement('article');
       article.innerHTML = processedContent;
 
-      const completeBtnContainer = document.createElement('footer');
-      completeBtnContainer.style.marginTop = '2rem';
-      completeBtnContainer.innerHTML = `
-        <button onclick="Core.completeLesson('${courseId}', '${lessonId}')">
-          Завершить урок
-        </button>
-      `;
-      article.appendChild(completeBtnContainer);
       contentDiv.replaceWith(article);
     }, 100);
   },
   
   // Завершение урока
   completeLesson(courseId, lessonId) {
-    if (!this.state.isLoggedIn) return;
-    
     Storage.saveUserProgress(this.state.currentUser.id, courseId, lessonId, {
       completed: true,
       score: 100,
       attempts: 1,
       passedAt: Date.now()
     });
-  
     this.setView('course', { currentCourseId: courseId });
   },
   
   // Рендеринг теста
   renderQuiz(quizId) {
-    if (!this.state.isLoggedIn) {
-      this.setView('login');
-      return;
-    }
-  
     const quiz = Storage.getQuiz(quizId);
     if (!quiz) {
       alert('Тест не найден');
       return;
     }
-  
-    this.updateMainNavbar(); // Обновляем кнопки в главном navbar
   
     const attempts = Storage.getQuizAttempts(this.state.currentUser.id, quizId);
     if (quiz.maxAttempts > 0 && attempts >= quiz.maxAttempts) {
@@ -432,9 +400,8 @@ const Core = {
         <article class="fade-in" style="text-align:center;">
           <h2>Тест недоступен</h2>
           <p>Вы исчерпали все ${quiz.maxAttempts} попыток.</p>
-          <p>Обратитесь к администратору для сброса.</p>
           <footer>
-            <a href="#" role="button" class="secondary" onclick="event.preventDefault(); history.back()">Назад</a>
+            <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Core.renderLesson(Core.state.currentCourseId, Core.state.currentLessonId);">Вернуться к уроку</a>
           </footer>
         </article>
       `;
@@ -446,19 +413,49 @@ const Core = {
       this.showQuizResult(quiz, result, this.state.currentCourseId, this.state.currentLessonId);
     });
   },
-  
+
+  // Сбросить попытки прохождения теста
+  resetQuizAttempts(userId, quizId) {
+    Storage.resetQuizAttempts(userId, quizId);
+    this.renderQuiz(quizId);
+  },
+
   // Показать результат теста
   showQuizResult(quiz, result, courseId, lessonId) {
     const app = document.getElementById('app');
     const isPassed = result.score >= quiz.passingScore;
-  
-    this.updateMainNavbar(); // Обновляем кнопки в главном navbar
-  
+
+    // Check if all quizzes in the lesson are passed
+    if (isPassed) {
+      const course = Storage.getCourse(courseId);
+      const lesson = course.lessons.find(l => l.id === lessonId);
+
+      if (lesson) {
+        const quizIdsInLesson = [];
+        const regex = /\[quiz:([^\]]+)\]/g;
+        let match;
+        while ((match = regex.exec(lesson.content)) !== null) {
+          quizIdsInLesson.push(match[1]);
+        }
+
+        const allQuizzesPassed = quizIdsInLesson.every(qId => {
+          const q = Storage.getQuiz(qId);
+          const lastResult = Storage.getLastQuizResult(this.state.currentUser.id, qId);
+          return lastResult && lastResult.score >= q.passingScore;
+        });
+
+        if (allQuizzesPassed) {
+          Core.completeLesson(courseId, lessonId);
+          return; // Lesson is completed, no need to show quiz result screen
+        }
+      }
+    }
+
     let html = `
       <article class="result-card fade-in" style="text-align:center;">
         <hgroup>
           <h2>Результат теста</h2>
-          <h3 class="${isPassed ? 'text-success' : 'text-danger'}">
+          <h3 class="${isPassed ? '' : 'text-danger'}">
             Ваш результат: ${result.score}%
           </h3>
         </hgroup>
@@ -471,47 +468,14 @@ const Core = {
     const attempts = Storage.getQuizAttempts(this.state.currentUser.id, quiz.id);
     if (!isPassed && (quiz.maxAttempts === 0 || attempts < quiz.maxAttempts)) {
       html += `
-        <a href="#" role="button" onclick="event.preventDefault(); Core.navigateAfterQuiz('quiz', null, null, '${quiz.id}')">
+        <a href="#" role="button" onclick="event.preventDefault(); Core.setView('quiz', { currentQuizId: '${quiz.id}'})">
           Пройти повторно
         </a>
       `;
     }
-  
-    // Логика для кнопок навигации
-    if (isPassed) {
-      const course = Storage.getCourse(courseId);
-      if (course) {
-        const currentLessonIndex = course.lessons.findIndex(l => l.id === lessonId);
-        const nextLesson = course.lessons[currentLessonIndex + 1];
-  
-        if (nextLesson) {
-          // Есть следующий урок в текущем курсе
-          html += `
-            <a href="#" role="button" onclick="event.preventDefault(); Core.navigateAfterQuiz('lesson', '${courseId}', '${nextLesson.id}')">
-              Следующий урок
-            </a>
-          `;
-        } else {
-          // Уроков в текущем курсе больше нет, ищем следующий курс
-          const allCourses = Storage.getCourses();
-          const currentCourseIndex = allCourses.findIndex(c => c.id === courseId);
-          const nextCourse = allCourses[currentCourseIndex + 1];
-  
-          if (nextCourse) {
-            // Есть следующий курс
-            html += `
-              <a href="#" role="button" onclick="event.preventDefault(); Core.navigateAfterQuiz('course', '${nextCourse.id}')">
-                Следующий курс
-              </a>
-            `;
-          }
-        }
-      }
-    }
-  
+    
     html += `
-          <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Core.navigateAfterQuiz('course', '${courseId}')">К урокам</a>
-          <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Core.navigateAfterQuiz('home')">К курсам</a>
+          <a href="#" role="button" class="secondary" onclick="event.preventDefault(); Core.setView('course', { currentCourseId: '${courseId}'})">К урокам</a>
         </div>
       </footer>
     </article>
@@ -527,16 +491,12 @@ const Core = {
     this.state.isLoggedIn = false;
     this.state.isAdmin = false;
     this.state.isAdminMode = false;
+    
+    const header = document.getElementById('main-header');
+    header.innerHTML = ''; // Очищаем шапку
+
+    // Прямой вызов для разрыва рекурсии
     this.renderLoginScreen();
-    this.updateMainNavbar(); // Очищаем навигацию при смене пользователя
   },
-  
-  // Вспомогательная функция для навигации после теста
-  navigateAfterQuiz(view, courseId = null, lessonId = null, quizId = null) {
-    const params = {};
-    if (courseId) params.currentCourseId = courseId;
-    if (lessonId) params.currentLessonId = lessonId;
-    if (quizId) params.currentQuizId = quizId;
-    this.setView(view, params);
-  }
 };
+

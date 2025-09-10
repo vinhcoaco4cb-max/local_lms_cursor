@@ -194,7 +194,19 @@ const Storage = {
   
       localStorage.setItem(key, JSON.stringify(results));
     },
-  
+
+    // Сброс всех попыток прохождения теста для пользователя и теста
+    resetQuizAttempts(userId, quizId) {
+      const key = `quiz_results_${userId}`;
+      const saved = localStorage.getItem(key) || '{}';
+      let results = JSON.parse(saved);
+
+      if (results[quizId]) {
+        delete results[quizId]; // Удаляем все записи для конкретного теста
+        localStorage.setItem(key, JSON.stringify(results));
+      }
+    },
+
     // Получение всех попыток прохождения теста
     getQuizAttempts(userId, quizId) {
       const key = `quiz_results_${userId}`;

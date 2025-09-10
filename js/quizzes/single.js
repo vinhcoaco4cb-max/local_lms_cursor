@@ -3,7 +3,7 @@
  */
 QuizTypes.single = {
     render(question) {
-        const options = [...question.options].sort(() => Math.random() - 0.5);
+        const options = [...(question.options || [])].sort(() => Math.random() - 0.5);
         let html = '<fieldset>';
         options.forEach((option, index) => {
             html += `

@@ -3,30 +3,36 @@
  * Служит точкой входа и перенаправляет запросы к подмодулям
  */
 const Admin = {
-  // Текущее состояние
   state: {
-    currentTab: 'dashboard', // Изменено на 'dashboard'
+    currentTab: 'dashboard',
   },
-  app: null, // Добавляем свойство app
+  app: null,
 
-  // Рендеринг админки
   render() {
     if (!Core.state.isAdmin) {
       alert('Доступ запрещен.');
       Core.setView('home');
       return;
     }
-    this.app = document.getElementById('app'); // Инициализируем app здесь
+    this.app = document.getElementById('app');
+    const header = document.getElementById('main-header');
     
-    // Используем навигацию в стиле Pico.css
-    let html = `
+    // Рендерим шапку админки
+    header.innerHTML = `
       <nav>
-        <ul>
-          <li><a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); Core.toggleAdminMode()">← К обучению</a></li>
-        </ul>
         <ul>
           <li><strong>Администрирование</strong></li>
         </ul>
+        <ul class="admin-user-menu">
+          <li><span>${Core.state.currentUser.name}</span></li>
+          <li><a href="#" role="button" class="secondary outline" onclick="event.preventDefault(); Core.switchUser()">Выйти</a></li>
+        </ul>
+      </nav>
+    `;
+
+    // Рендерим основную часть админки
+    let html = `
+      <nav class="secondary">
         <ul>
           <li><a href="#" role="tab" onclick="event.preventDefault(); Admin.setTab('dashboard')" ${this.state.currentTab === 'dashboard' ? 'aria-current="page"' : ''}>Дашборд</a></li>
           <li><a href="#" role="tab" onclick="event.preventDefault(); Admin.setTab('courses')" ${this.state.currentTab === 'courses' ? 'aria-current="page"' : ''}>Курсы</a></li>
@@ -57,7 +63,6 @@ const Admin = {
     html += `</div>`;
     this.app.innerHTML = html;
 
-    // Call initEventListeners for specific tabs after rendering
     if (this.state.currentTab === 'quizzes') {
       AdminQuizzes.initEventListeners();
     }
@@ -69,3 +74,4 @@ const Admin = {
     this.render();
   },
 };
+

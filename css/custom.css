@@ -21,6 +21,7 @@ h6 { --font-size: 1rem; }
 
 article {
     padding: 1rem;
+    margin-bottom: 1rem;
 }
 
 /* Make admin navigation tabs more compact */
@@ -117,6 +118,25 @@ header nav {
 }
 
 /* Admin specific overrides */
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+.admin-header nav {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+.admin-user-menu {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -164,6 +184,13 @@ header nav {
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 0.5rem;
+    flex-wrap: wrap; /* Add this to prevent text overlap */
+}
+
+.option-item input[type="radio"],
+.option-item input[type="checkbox"] {
+    align-self: flex-start; /* Align checkbox to the top */
+    margin-right: 1rem; /* Add some space between checkbox and text */
 }
 
 .option-item input[type="text"] {
@@ -178,5 +205,50 @@ header nav {
 
 .sequence-step-item input {
     flex-grow: 1;
+}
+
+/* Compact Dashboard cards - Flexbox solution */
+.dashboard-card {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+.dashboard-card .card-content {
+    flex-grow: 1; /* This makes the content area expand */
+}
+.dashboard-card hgroup {
+    margin-bottom: 0.5rem;
+}
+.dashboard-card h3 {
+    font-size: 1.1rem;
+}
+.dashboard-card p {
+    font-size: 0.9rem;
+    color: var(--pico-muted-color);
+    margin: 0;
+}
+.dashboard-card .stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    line-height: 1;
+    margin-top: 0.5rem;
+}
+
+/* Styles for the quiz selection modal */
+.quiz-selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Styles for attached quiz items in lesson editor */
+.attached-quiz-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background-color: var(--pico-muted-background-color);
+    border-radius: var(--border-radius);
+    margin-bottom: 0.5rem;
 }
 
